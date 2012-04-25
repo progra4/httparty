@@ -2,11 +2,15 @@ class QuotesController < ApplicationController
   def random
     @quote = Quote.all.sample
 
+    quotes_read = cookies[:quotes_read].split(/,\s*/) rescue []
+    quotes_read << @quote.id.to_s
+    cookies[:quotes_read] = quotes_read.join(",")
+
     respond_to do |format|
       format.html # show.html.erb
       format.json do
         if @quote
-          render json: @quote 
+          render json: @quote
         else
           head :not_found
         end
@@ -38,9 +42,10 @@ class QuotesController < ApplicationController
     if params[:limit].present?
       @quotes = Quote.limit(params[:limit])
     end
-
-    if (lang = request.env["HTTP_ACCEPT_LANGUAGE"].present?) && %w(es en).include?(lang)
-      @quotes ||= Quote.where(language: request.env["HTTP_ACCEPT_LANGUAGE"])
+    
+    lang = request.env["HTTP_ACCEPT_LANGUAGE"] || params[:lang]
+    if lang && %w(en es).include?(lang)
+      @quotes = (@quotes || Quote).where(language: lang)
     end
 
     if params[:unread].present? && !cookies[:quotes_read].blank?
@@ -63,15 +68,17 @@ class QuotesController < ApplicationController
   def show
     @quote = Quote.find_by_id(params[:id])
 
-    quotes_read = cookies[:quotes_read].split(/,\s*/) rescue []
-    quotes_read << @quote.id.to_s
-    cookies[:quotes_read] = quotes_read.join(",")
+    if @quote
+      quotes_read = cookies[:quotes_read].split(/,\s*/) rescue []
+      quotes_read << @quote.id.to_s
+      cookies[:quotes_read] = quotes_read.join(",")
+    end
 
     respond_to do |format|
       format.html # show.html.erb
       format.json do
         if @quote
-          render json: @quote 
+          render json: @quote
         else
           head :not_found
         end
