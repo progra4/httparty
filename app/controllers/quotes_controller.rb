@@ -29,7 +29,7 @@ class QuotesController < ApplicationController
       @quotes = Quote.limit(params[:limit])
     end
 
-    if request.env["HTTP_ACCEPT_LANGUAGE"].present?
+    if (lang = request.env["HTTP_ACCEPT_LANGUAGE"].present?) && %w(es en).include?(lang)
       @quotes ||= Quote.where(language: request.env["HTTP_ACCEPT_LANGUAGE"])
     end
 
