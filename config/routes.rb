@@ -2,6 +2,7 @@ Quotes::Application.routes.draw do
   root :to => redirect('/quotes') 
   resources :quotes do
     get :random, on: :collection
+    get :read, on: :collection
   end
 
   # The priority is based upon order of creation:

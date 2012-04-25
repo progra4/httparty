@@ -21,6 +21,16 @@ class QuotesController < ApplicationController
     end
   end
 
+  def read
+    @quotes = Quote.where(id: cookies[:quotes_read].split(/,\s*/)) rescue []
+    respond_to do |format|
+      format.text do
+        render text: @quotes.map(&:as_text).join("\n")
+      end
+      format.json { render json: @quotes }
+    end
+  end
+
   # GET /quotes
   # GET /quotes.json
   def index
@@ -31,6 +41,10 @@ class QuotesController < ApplicationController
 
     if (lang = request.env["HTTP_ACCEPT_LANGUAGE"].present?) && %w(es en).include?(lang)
       @quotes ||= Quote.where(language: request.env["HTTP_ACCEPT_LANGUAGE"])
+    end
+
+    if params[:unread].present? && !cookies[:quotes_read].blank?
+      @quotes = (@quotes || Quote).where("id NOT IN (?)", cookies[:quotes_read].split(/,\s*/))
     end
 
     @quotes ||= Quote.all
@@ -48,6 +62,10 @@ class QuotesController < ApplicationController
   # GET /quotes/1.json
   def show
     @quote = Quote.find_by_id(params[:id])
+
+    quotes_read = cookies[:quotes_read].split(/,\s*/) rescue []
+    quotes_read << @quote.id.to_s
+    cookies[:quotes_read] = quotes_read.join(",")
 
     respond_to do |format|
       format.html # show.html.erb
